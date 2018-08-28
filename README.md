@@ -8,4 +8,4 @@ Useful tools:
 
 - [vscode-cfn-lint](https://marketplace.visualstudio.com/items?itemName=kddejong.vscode-cfn-lint) VS Code CloudFormation linter uses `cfn-lint`
 
-- [scripts/validate-templates.sh](https://github.com/linuxacademy/CloudCraft-CF-Templates/blob/master/scripts/validate-templates.sh) Validate all the CloudFormation templates in this repo
+- [scripts/validate-templates.sh](./scripts/validate-templates.sh) Validate all the CloudFormation templates in this repo
