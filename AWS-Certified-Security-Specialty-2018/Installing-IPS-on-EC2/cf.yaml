@@ -1,7 +1,13 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Install an IPS on an EC2 Instance - Security Specialty
 
-# Two EC2 instances in a public subnet
+Description: >
+    Install an IPS on an EC2 Instance - Security Specialty. This template
+    deploys a VPC, with a public subnet. It deploys an Internet Gateway, with a
+    default route on the public subnet. It also deploys two EC2 instances in
+    the public subnet.
+
+# CloudCraft: https://cloudcraft.linuxacademy.com/#/labs/details/5e205259-f2df-4b17-b21b-c543edab5ac2?courseId=203
+# Lucidchart: https://www.lucidchart.com/documents/edit/b3d728a5-ce3e-4d2b-b70f-6aaa69b1da6e/0
 
 Resources:
   VPC:
@@ -221,9 +227,19 @@ Resources:
           echo -e '[default]\nregion = us-east-1' > /home/cloud_user/.aws/config
 
 Outputs:
+
   pubIpAddress1:
     Description: Public IP address of EC2Instance A
     Value: !GetAtt EC2InstanceA.PublicIp
+
   pubIpAddress2:
     Description: Public IP address of EC2Instance B
     Value: !GetAtt EC2InstanceB.PublicIp
+
+  VPC:
+    Description: A reference to the created VPC
+    Value: !Ref VPC
+
+  DMZ:
+    Description: A reference to the public subnet
+    Value: !Ref DMZ
