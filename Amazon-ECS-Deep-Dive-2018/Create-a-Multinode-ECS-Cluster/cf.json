@@ -1,0 +1,50 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Creating a Multi-Node ECS Cluster. The student is expected to create the cluster in the AWS Management Console and deploy additional EC2 instances into the VPC and join them to the ECS cluster.\n",
+    "Resources": {
+        "EcsInstanceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "ec2.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+                ],
+                "RoleName": "ecsInstanceRole"
+            }
+        },
+        "EcsInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Roles": [
+                    {
+                        "Ref": "EcsInstanceRole"
+                    }
+                ],
+                "InstanceProfileName": {
+                    "Ref": "EcsInstanceRole"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "EcsInstanceRole": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "EcsInstanceRole",
+                    "Arn"
+                ]
+            }
+        }
+    }
+}
