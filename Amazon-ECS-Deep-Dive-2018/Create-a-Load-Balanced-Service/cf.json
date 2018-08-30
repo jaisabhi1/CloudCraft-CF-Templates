@@ -690,6 +690,15 @@
         }
     },
     "Outputs": {
+        "pubIpAddress1": {
+            "Description": "Bastion Host IP",
+            "Value": {
+                "Fn::GetAtt": [
+                    "BastionInstance",
+                    "PublicIp"
+                ]
+            }
+        },
         "VPC": {
             "Description": "A reference to the created VPC",
             "Value": {

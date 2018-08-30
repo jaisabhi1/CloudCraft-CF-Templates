@@ -543,6 +543,10 @@ Resources:
 
 Outputs:
 
+    pubIpAddress1:
+        Description: Bastion Host IP
+        Value: !GetAtt BastionInstance.PublicIp
+
     VPC:
         Description: A reference to the created VPC
         Value: !Ref VPC
