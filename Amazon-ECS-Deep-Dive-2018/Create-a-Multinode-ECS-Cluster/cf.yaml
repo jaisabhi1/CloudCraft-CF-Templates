@@ -1,9 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
 Description: >
-    Creating a Multi-Node ECS Cluster. The student is expected to create the
-    cluster in the AWS Management Console and deploy additional EC2 instances
-    into the VPC and join them to the ECS cluster.
+  Creating a Multi-Node ECS Cluster. The student is expected to create the
+  cluster in the AWS Management Console and deploy additional EC2 instances
+  into the VPC and join them to the ECS cluster.
 
 Resources:
   # VPC:
@@ -223,6 +223,7 @@ Resources:
       Roles:
       - !Ref EcsInstanceRole
       InstanceProfileName: !Ref EcsInstanceRole
+
 
 Outputs:
 
