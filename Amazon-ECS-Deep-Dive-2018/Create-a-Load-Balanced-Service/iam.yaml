@@ -27,10 +27,7 @@ Statement:
   - route53:Get*
   - route53:List*
   - route53:UpdateHealthCheck
-  - servicediscovery:DeregisterInstance
-  - servicediscovery:Get*
-  - servicediscovery:List*
-  - servicediscovery:RegisterInstance
+  - servicediscovery:*
   - tag:*
   Resource: '*'
 - Sid: AWSServiceRoleForECS
