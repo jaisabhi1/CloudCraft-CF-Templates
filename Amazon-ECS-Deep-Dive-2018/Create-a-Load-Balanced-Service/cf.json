@@ -3,8 +3,39 @@
     "Description": "\nThis template creates a complete ECS Cluster with the following resources:\n- A tiered VPC with public and private subnets. - A highly available ECS cluster deployed across two Availability Zones in an\n  Auto Scaling group and that are AWS SSM enabled.\n- A pair of NAT gateways (one in each zone) to handle outbound traffic. - Centralized container logging with Amazon CloudWatch Logs. - Task Definition (nginx).\n",
     "Parameters": {
         "EnvironmentName": {
+            "Description": "An environment name that will be prefixed to resource names",
             "Type": "String",
             "Default": "Lab"
+        },
+        "VpcCIDR": {
+            "Description": "Please enter the IP range (CIDR notation) for this VPC",
+            "Type": "String",
+            "AllowedPattern": "((\\d{1,3})\\.){3}\\d{1,3}/\\d{1,2}",
+            "Default": "10.192.0.0/16"
+        },
+        "PublicSubnet1CIDR": {
+            "Description": "Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone",
+            "Type": "String",
+            "AllowedPattern": "((\\d{1,3})\\.){3}\\d{1,3}/\\d{1,2}",
+            "Default": "10.192.10.0/24"
+        },
+        "PublicSubnet2CIDR": {
+            "Description": "Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone",
+            "Type": "String",
+            "AllowedPattern": "((\\d{1,3})\\.){3}\\d{1,3}/\\d{1,2}",
+            "Default": "10.192.11.0/24"
+        },
+        "PrivateSubnet1CIDR": {
+            "Description": "Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone",
+            "Type": "String",
+            "AllowedPattern": "((\\d{1,3})\\.){3}\\d{1,3}/\\d{1,2}",
+            "Default": "10.192.20.0/24"
+        },
+        "PrivateSubnet2CIDR": {
+            "Description": "Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone",
+            "Type": "String",
+            "AllowedPattern": "((\\d{1,3})\\.){3}\\d{1,3}/\\d{1,2}",
+            "Default": "10.192.21.0/24"
         },
         "InstanceType": {
             "Type": "String",
@@ -37,23 +68,42 @@
         "VPC": {
             "Type": "AWS::EC2::VPC",
             "Properties": {
-                "CidrBlock": "10.0.0.0/16",
+                "CidrBlock": {
+                    "Ref": "VpcCIDR"
+                },
                 "EnableDnsHostnames": true,
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "EnvironmentName"
-                                    }
-                                ]
-                            ]
+                            "Ref": "EnvironmentName"
                         }
                     }
                 ]
+            }
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "EnvironmentName"
+                        }
+                    }
+                ]
+            }
+        },
+        "InternetGatewayAttachment": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                }
             }
         },
         "PublicSubnet1": {
@@ -70,21 +120,15 @@
                         }
                     ]
                 },
-                "CidrBlock": "10.0.8.0/21",
+                "CidrBlock": {
+                    "Ref": "PublicSubnet1CIDR"
+                },
                 "MapPublicIpOnLaunch": true,
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "EnvironmentName"
-                                    },
-                                    "Public-AZ1"
-                                ]
-                            ]
+                            "Fn::Sub": "${EnvironmentName} Public Subnet (AZ1)"
                         }
                     }
                 ]
@@ -93,6 +137,9 @@
         "PublicSubnet2": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
                 "AvailabilityZone": {
                     "Fn::Select": [
                         1,
@@ -101,24 +148,15 @@
                         }
                     ]
                 },
-                "VpcId": {
-                    "Ref": "VPC"
+                "CidrBlock": {
+                    "Ref": "PublicSubnet2CIDR"
                 },
-                "CidrBlock": "10.0.16.0/21",
                 "MapPublicIpOnLaunch": true,
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "EnvironmentName"
-                                    },
-                                    "Public-AZ2"
-                                ]
-                            ]
+                            "Fn::Sub": "${EnvironmentName} Public Subnet (AZ2)"
                         }
                     }
                 ]
@@ -138,21 +176,15 @@
                         }
                     ]
                 },
-                "CidrBlock": "10.0.24.0/21",
+                "CidrBlock": {
+                    "Ref": "PrivateSubnet1CIDR"
+                },
                 "MapPublicIpOnLaunch": false,
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "EnvironmentName"
-                                    },
-                                    "Private-AZ1"
-                                ]
-                            ]
+                            "Fn::Sub": "${EnvironmentName} Private Subnet (AZ1)"
                         }
                     }
                 ]
@@ -172,54 +204,59 @@
                         }
                     ]
                 },
-                "CidrBlock": "10.0.32.0/21",
+                "CidrBlock": {
+                    "Ref": "PrivateSubnet2CIDR"
+                },
                 "MapPublicIpOnLaunch": false,
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "EnvironmentName"
-                                    },
-                                    "Private-AZ2"
-                                ]
-                            ]
+                            "Fn::Sub": "${EnvironmentName} Private Subnet (AZ2)"
                         }
                     }
                 ]
             }
         },
-        "InternetGateway": {
-            "Type": "AWS::EC2::InternetGateway",
+        "NatGateway1EIP": {
+            "Type": "AWS::EC2::EIP",
+            "DependsOn": "InternetGatewayAttachment",
             "Properties": {
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "1",
-                                [
-                                    {
-                                        "Ref": "EnvironmentName"
-                                    }
-                                ]
-                            ]
-                        }
-                    }
-                ]
+                "Domain": "vpc"
             }
         },
-        "GatewayToInternet": {
-            "Type": "AWS::EC2::VPCGatewayAttachment",
+        "NatGateway2EIP": {
+            "Type": "AWS::EC2::EIP",
+            "DependsOn": "InternetGatewayAttachment",
             "Properties": {
-                "VpcId": {
-                    "Ref": "VPC"
+                "Domain": "vpc"
+            }
+        },
+        "NatGateway1": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "NatGateway1EIP",
+                        "AllocationId"
+                    ]
                 },
-                "InternetGatewayId": {
-                    "Ref": "InternetGateway"
+                "SubnetId": {
+                    "Ref": "PublicSubnet1"
+                }
+            }
+        },
+        "NatGateway2": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "NatGateway2EIP",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "PublicSubnet2"
                 }
             }
         },
@@ -228,12 +265,20 @@
             "Properties": {
                 "VpcId": {
                     "Ref": "VPC"
-                }
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName} Public Routes"
+                        }
+                    }
+                ]
             }
         },
-        "PublicRoute": {
+        "DefaultPublicRoute": {
             "Type": "AWS::EC2::Route",
-            "DependsOn": "GatewayToInternet",
+            "DependsOn": "InternetGatewayAttachment",
             "Properties": {
                 "RouteTableId": {
                     "Ref": "PublicRouteTable"
@@ -247,85 +292,100 @@
         "PublicSubnet1RouteTableAssociation": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
-                "SubnetId": {
-                    "Ref": "PublicSubnet1"
-                },
                 "RouteTableId": {
                     "Ref": "PublicRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "PublicSubnet1"
                 }
             }
         },
         "PublicSubnet2RouteTableAssociation": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
-                "SubnetId": {
-                    "Ref": "PublicSubnet2"
-                },
                 "RouteTableId": {
                     "Ref": "PublicRouteTable"
-                }
-            }
-        },
-        "NatGateway": {
-            "Type": "AWS::EC2::NatGateway",
-            "Properties": {
-                "AllocationId": {
-                    "Fn::GetAtt": [
-                        "NatPublicIP",
-                        "AllocationId"
-                    ]
                 },
                 "SubnetId": {
-                    "Ref": "PublicSubnet1"
+                    "Ref": "PublicSubnet2"
                 }
             }
         },
-        "NatPublicIP": {
-            "Type": "AWS::EC2::EIP",
-            "DependsOn": "VPC",
-            "Properties": {
-                "Domain": "vpc"
-            }
-        },
-        "PrivateRouteTable": {
+        "PrivateRouteTable1": {
             "Type": "AWS::EC2::RouteTable",
             "Properties": {
                 "VpcId": {
                     "Ref": "VPC"
-                }
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName} Private Routes (AZ1)"
+                        }
+                    }
+                ]
             }
         },
-        "PrivateRoute": {
+        "DefaultPrivateRoute1": {
             "Type": "AWS::EC2::Route",
             "Properties": {
                 "RouteTableId": {
-                    "Ref": "PrivateRouteTable"
+                    "Ref": "PrivateRouteTable1"
                 },
                 "DestinationCidrBlock": "0.0.0.0/0",
                 "NatGatewayId": {
-                    "Ref": "NatGateway"
+                    "Ref": "NatGateway1"
                 }
             }
         },
         "PrivateSubnet1RouteTableAssociation": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable1"
+                },
                 "SubnetId": {
                     "Ref": "PrivateSubnet1"
+                }
+            }
+        },
+        "PrivateRouteTable2": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
                 },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName} Private Routes (AZ2)"
+                        }
+                    }
+                ]
+            }
+        },
+        "DefaultPrivateRoute2": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
                 "RouteTableId": {
-                    "Ref": "PrivateRouteTable"
+                    "Ref": "PrivateRouteTable2"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NatGateway2"
                 }
             }
         },
         "PrivateSubnet2RouteTableAssociation": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable2"
+                },
                 "SubnetId": {
                     "Ref": "PrivateSubnet2"
-                },
-                "RouteTableId": {
-                    "Ref": "PrivateRouteTable"
                 }
             }
         },
@@ -398,19 +458,42 @@
                     "Ref": "VPC"
                 },
                 "GroupDescription": "Access to the ECS hosts and the tasks/containers that run on them",
+                "SecurityGroupIngress": [
+                    {
+                        "SourceSecurityGroupId": {
+                            "Ref": "LoadBalancerSecurityGroup"
+                        },
+                        "IpProtocol": "-1"
+                    }
+                ],
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "EnvironmentName"
-                                    },
-                                    "ECS-Hosts"
-                                ]
-                            ]
+                            "Fn::Sub": "${EnvironmentName}-ECS-Hosts"
+                        }
+                    }
+                ]
+            }
+        },
+        "LoadBalancerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "GroupDescription": "Access to the load balancer that sits in front of ECS",
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "IpProtocol": "-1"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-LoadBalancers"
                         }
                     }
                 ]
@@ -643,10 +726,10 @@
                     "Fn::Join": [
                         "",
                         [
+                            "nginx-",
                             {
                                 "Ref": "AWS::StackName"
-                            },
-                            "-nginx"
+                            }
                         ]
                     ]
                 },
@@ -658,10 +741,10 @@
                         "Name": "nginx",
                         "Essential": true,
                         "Image": "nginx:latest",
-                        "Memory": 128,
+                        "Memory": 300,
                         "PortMappings": [
                             {
-                                "ContainerPort": 8000
+                                "ContainerPort": 80
                             }
                         ],
                         "LogConfiguration": {
@@ -765,6 +848,12 @@
             "Description": "A reference to the security group for ECS hosts",
             "Value": {
                 "Ref": "ECSHostSecurityGroup"
+            }
+        },
+        "LoadBalancerSecurityGroup": {
+            "Description": "A reference to the security group for load balancers",
+            "Value": {
+                "Ref": "LoadBalancerSecurityGroup"
             }
         },
         "Cluster": {

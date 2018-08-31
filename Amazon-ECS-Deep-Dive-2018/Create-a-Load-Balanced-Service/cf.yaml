@@ -30,26 +30,57 @@ Description: >
 
 Parameters:
 
-  EnvironmentName:
-    Type: String
-    Default: Lab
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: Lab
 
-  InstanceType:
-    Type: String
-    Default: t2.micro
-    AllowedValues:
-      - t2.micro
-      - m1.small
-      - m1.large
+    VpcCIDR:
+        Description: Please enter the IP range (CIDR notation) for this VPC
+        Type: String
+        AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+        Default: 10.192.0.0/16
 
-  ClusterSize:
-    Type: Number
-    Default: 4
-    AllowedValues:
-      - 1
-      - 2
-      - 3
-      - 4
+    PublicSubnet1CIDR:
+        Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+        Type: String
+        AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+        Default: 10.192.10.0/24
+
+    PublicSubnet2CIDR:
+        Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+        Type: String
+        AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+        Default: 10.192.11.0/24
+
+    PrivateSubnet1CIDR:
+        Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+        Type: String
+        AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+        Default: 10.192.20.0/24
+
+    PrivateSubnet2CIDR:
+        Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+        Type: String
+        AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+        Default: 10.192.21.0/24
+
+    InstanceType:
+        Type: String
+        Default: t2.micro
+        AllowedValues:
+            - t2.micro
+            - m1.small
+            - m1.large
+
+    ClusterSize:
+        Type: Number
+        Default: 4
+        AllowedValues:
+            - 1
+            - 2
+            - 3
+            - 4
 
 Mappings:
 
@@ -75,132 +106,169 @@ Resources:
     #############################################################################
 
     VPC:
-        Type: 'AWS::EC2::VPC'
+        Type: AWS::EC2::VPC
         Properties:
-            CidrBlock: 10.0.0.0/16
+            CidrBlock: !Ref VpcCIDR
             EnableDnsHostnames: true
             Tags:
-            - Key: Name
-              Value: !Join [-, [!Ref EnvironmentName]]
-
-    PublicSubnet1:
-        Type: 'AWS::EC2::Subnet'
-        Properties:
-            VpcId: !Ref VPC
-            AvailabilityZone: !Select [ 0, !GetAZs '' ]
-            CidrBlock: 10.0.8.0/21
-            MapPublicIpOnLaunch: true
-            Tags:
-            - Key: Name
-              Value: !Join [-, [!Ref EnvironmentName,Public-AZ1]]
-
-    PublicSubnet2:
-        Type: 'AWS::EC2::Subnet'
-        Properties:
-            AvailabilityZone: !Select [ 1, !GetAZs '' ]
-            VpcId: !Ref VPC
-            CidrBlock: 10.0.16.0/21
-            MapPublicIpOnLaunch: true
-            Tags:
-            - Key: Name
-              Value: !Join [-, [!Ref EnvironmentName,Public-AZ2]]
-
-    PrivateSubnet1:
-        Type: 'AWS::EC2::Subnet'
-        Properties:
-            VpcId: !Ref VPC
-            AvailabilityZone: !Select [ 0, !GetAZs '' ]
-            CidrBlock: 10.0.24.0/21
-            MapPublicIpOnLaunch: false
-            Tags:
-            - Key: Name
-              Value: !Join [-, [!Ref EnvironmentName,Private-AZ1]]
-
-    PrivateSubnet2:
-        Type: 'AWS::EC2::Subnet'
-        Properties:
-            VpcId: !Ref VPC
-            AvailabilityZone: !Select [ 1, !GetAZs '' ]
-            CidrBlock: 10.0.32.0/21
-            MapPublicIpOnLaunch: false
-            Tags:
-            - Key: Name
-              Value: !Join [-, [!Ref EnvironmentName,Private-AZ2]]
+                - Key: Name
+                  Value: !Ref EnvironmentName
 
     InternetGateway:
-        Type: 'AWS::EC2::InternetGateway'
+        Type: AWS::EC2::InternetGateway
         Properties:
             Tags:
-            - Key: Name
-              Value: !Join ['1', [!Ref EnvironmentName]]
+                - Key: Name
+                  Value: !Ref EnvironmentName
 
-    GatewayToInternet:
-        Type: 'AWS::EC2::VPCGatewayAttachment'
+    InternetGatewayAttachment:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            InternetGatewayId: !Ref InternetGateway
+            VpcId: !Ref VPC
+
+    PublicSubnet1:
+        Type: AWS::EC2::Subnet
         Properties:
             VpcId: !Ref VPC
-            InternetGatewayId: !Ref InternetGateway
+            AvailabilityZone: !Select [ 0, !GetAZs '' ]
+            CidrBlock: !Ref PublicSubnet1CIDR
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Public Subnet (AZ1)
+
+    PublicSubnet2:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref VPC
+            AvailabilityZone: !Select [ 1, !GetAZs '' ]
+            CidrBlock: !Ref PublicSubnet2CIDR
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Public Subnet (AZ2)
+
+    PrivateSubnet1:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref VPC
+            AvailabilityZone: !Select [ 0, !GetAZs '' ]
+            CidrBlock: !Ref PrivateSubnet1CIDR
+            MapPublicIpOnLaunch: false
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+
+    PrivateSubnet2:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref VPC
+            AvailabilityZone: !Select [ 1, !GetAZs '' ]
+            CidrBlock: !Ref PrivateSubnet2CIDR
+            MapPublicIpOnLaunch: false
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
+
+    NatGateway1EIP:
+        Type: AWS::EC2::EIP
+        DependsOn: InternetGatewayAttachment
+        Properties:
+            Domain: vpc
+
+    NatGateway2EIP:
+        Type: AWS::EC2::EIP
+        DependsOn: InternetGatewayAttachment
+        Properties:
+            Domain: vpc
+
+    NatGateway1:
+        Type: AWS::EC2::NatGateway
+        Properties:
+            AllocationId: !GetAtt NatGateway1EIP.AllocationId
+            SubnetId: !Ref PublicSubnet1
+
+    NatGateway2:
+        Type: AWS::EC2::NatGateway
+        Properties:
+            AllocationId: !GetAtt NatGateway2EIP.AllocationId
+            SubnetId: !Ref PublicSubnet2
 
     PublicRouteTable:
-        Type: 'AWS::EC2::RouteTable'
+        Type: AWS::EC2::RouteTable
         Properties:
             VpcId: !Ref VPC
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Public Routes
 
-    PublicRoute:
-        Type: 'AWS::EC2::Route'
-        DependsOn: GatewayToInternet
+    DefaultPublicRoute:
+        Type: AWS::EC2::Route
+        DependsOn: InternetGatewayAttachment
         Properties:
             RouteTableId: !Ref PublicRouteTable
             DestinationCidrBlock: 0.0.0.0/0
             GatewayId: !Ref InternetGateway
 
     PublicSubnet1RouteTableAssociation:
-        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
-            SubnetId: !Ref PublicSubnet1
             RouteTableId: !Ref PublicRouteTable
+            SubnetId: !Ref PublicSubnet1
 
     PublicSubnet2RouteTableAssociation:
-        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
-            SubnetId: !Ref PublicSubnet2
             RouteTableId: !Ref PublicRouteTable
+            SubnetId: !Ref PublicSubnet2
 
-    NatGateway:
-        Type: "AWS::EC2::NatGateway"
-        #DependsOn: NatPublicIP
-        Properties:
-            AllocationId: !GetAtt NatPublicIP.AllocationId
-            SubnetId: !Ref PublicSubnet1
 
-    NatPublicIP:
-        Type: "AWS::EC2::EIP"
-        DependsOn: VPC
-        Properties:
-            Domain: vpc
-
-    PrivateRouteTable:
-        Type: 'AWS::EC2::RouteTable'
+    PrivateRouteTable1:
+        Type: AWS::EC2::RouteTable
         Properties:
             VpcId: !Ref VPC
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Private Routes (AZ1)
 
-    PrivateRoute:
-        Type: 'AWS::EC2::Route'
+    DefaultPrivateRoute1:
+        Type: AWS::EC2::Route
         Properties:
-            RouteTableId: !Ref PrivateRouteTable
+            RouteTableId: !Ref PrivateRouteTable1
             DestinationCidrBlock: 0.0.0.0/0
-            NatGatewayId: !Ref NatGateway
+            NatGatewayId: !Ref NatGateway1
 
     PrivateSubnet1RouteTableAssociation:
-        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
+            RouteTableId: !Ref PrivateRouteTable1
             SubnetId: !Ref PrivateSubnet1
-            RouteTableId: !Ref PrivateRouteTable
+
+    PrivateRouteTable2:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref VPC
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Private Routes (AZ2)
+
+    DefaultPrivateRoute2:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PrivateRouteTable2
+            DestinationCidrBlock: 0.0.0.0/0
+            NatGatewayId: !Ref NatGateway2
 
     PrivateSubnet2RouteTableAssociation:
-        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
+            RouteTableId: !Ref PrivateRouteTable2
             SubnetId: !Ref PrivateSubnet2
-            RouteTableId: !Ref PrivateRouteTable
+
+    ###########################################################################
+    # Bastion Host
+    ###########################################################################
 
     BastionSecurityGroup:
         Type: "AWS::EC2::SecurityGroup"
@@ -253,14 +321,29 @@ Resources:
         Properties:
             VpcId: !Ref VPC
             GroupDescription: Access to the ECS hosts and the tasks/containers that run on them
-            # STUDENT WILL CREATE THE LOAD BALANCER
-            # SecurityGroupIngress:
-            #     # Only allow inbound access to ECS from the ELB
-            #     - SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
-            #       IpProtocol: '-1'
+            SecurityGroupIngress:
+                # Only allow inbound access to ECS from the ELB
+                - SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+                  IpProtocol: '-1'
             Tags:
                 - Key: Name
-                  Value: !Join [-, [!Ref EnvironmentName,ECS-Hosts]]
+                  Value: !Sub ${EnvironmentName}-ECS-Hosts
+
+    # This security group defines who/where is allowed to access the Application Load Balancer.
+    # By default, we've opened this up to the public internet (0.0.0.0/0) but can you restrict
+    # it further if you want.
+    LoadBalancerSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            VpcId: !Ref VPC
+            GroupDescription: Access to the load balancer that sits in front of ECS
+            SecurityGroupIngress:
+                # Allow access from anywhere to our ECS services
+                - CidrIp: 0.0.0.0/0
+                  IpProtocol: '-1'
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName}-LoadBalancers
 
     #############################################################################
     # ECS Cluster
@@ -519,16 +602,16 @@ Resources:
     TaskDefinition:
         Type: AWS::ECS::TaskDefinition
         Properties:
-            Family: !Join ['', [!Ref 'AWS::StackName', -nginx]]
+            Family: !Join ['', [nginx-, !Ref 'AWS::StackName']]
             RequiresCompatibilities:
                 - "EC2"
             ContainerDefinitions:
                 - Name: nginx
                   Essential: true
                   Image: nginx:latest
-                  Memory: 128
+                  Memory: 300
                   PortMappings:
-                    - ContainerPort: 8000
+                    - ContainerPort: 80
                   LogConfiguration:
                     LogDriver: awslogs
                     Options:
@@ -578,6 +661,10 @@ Outputs:
     ECSHostSecurityGroup:
         Description: A reference to the security group for ECS hosts
         Value: !Ref ECSHostSecurityGroup
+
+    LoadBalancerSecurityGroup:
+        Description: A reference to the security group for load balancers
+        Value: !Ref LoadBalancerSecurityGroup
 
     Cluster:
         Description: A reference to the ECS cluster
