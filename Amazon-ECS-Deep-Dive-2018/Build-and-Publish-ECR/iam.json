@@ -1,0 +1,56 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ECSFullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "application-autoscaling:*",
+                "autoscaling:*",
+                "cloudformation:*",
+                "cloudwatch:*",
+                "ec2:*",
+                "elasticloadbalancing:*",
+                "events:*",
+                "ecr:*",
+                "ecs:*",
+                "iam:AttachRolePolicy",
+                "iam:AddRoleToInstanceProfile",
+                "iam:CreateAccessKey",
+                "iam:CreateRole",
+                "iam:CreateInstanceProfile",
+                "iam:Get*",
+                "iam:List*",
+                "iam:PassRole",
+                "iam:PutRolePolicy",
+                "logs:*",
+                "route53:ChangeResourceRecordSets",
+                "route53:CreateHealthCheck",
+                "route53:DeleteHealthCheck",
+                "route53:Get*",
+                "route53:List*",
+                "route53:UpdateHealthCheck",
+                "servicediscovery:DeregisterInstance",
+                "servicediscovery:Get*",
+                "servicediscovery:List*",
+                "servicediscovery:RegisterInstance",
+                "tag:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AWSServiceRoleForECS",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateServiceLinkedRole",
+                "iam:PutRolePolicy"
+            ],
+            "Resource": "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS*",
+            "Condition": {
+                "StringLike": {
+                    "iam:AWSServiceName": "ecs.amazonaws.com"
+                }
+            }
+        }
+    ]
+}
