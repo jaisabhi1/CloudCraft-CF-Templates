@@ -404,6 +404,6 @@ Resources:
       Priority: !Ref 'Priority'
 
 Outputs:
-  ExternalUrl:
-    Description: The url of the external load balancer
+  privIpAddress1:
+    Description: Application Load Balancer URL
     Value: !Sub http://${PublicLoadBalancer.DNSName}
