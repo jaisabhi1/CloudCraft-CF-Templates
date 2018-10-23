@@ -513,7 +513,8 @@
                                 {
                                     "Ref": "AWS::Region"
                                 },
-                                "\n"
+                                "\n",
+                                "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm\n"
                             ]
                         ]
                     }
@@ -661,8 +662,7 @@
                                         "ecr:BatchCheckLayerAvailability",
                                         "ecr:GetDownloadUrlForLayer",
                                         "ecr:BatchGetImage",
-                                        "logs:CreateLogStream",
-                                        "logs:PutLogEvents"
+                                        "logs:*"
                                     ],
                                     "Resource": "*"
                                 }

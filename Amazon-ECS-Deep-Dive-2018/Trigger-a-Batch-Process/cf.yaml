@@ -350,6 +350,7 @@ Resources:
             - '         --region '
             - !Ref 'AWS::Region'
             - "\n"
+            - "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm\n"
 
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -425,6 +426,8 @@ Resources:
             Action:
               - sts:AssumeRole
       Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
       Policies:
         - PolicyName: ecs-instance
           PolicyDocument:
@@ -442,8 +445,7 @@ Resources:
                   - ecr:BatchCheckLayerAvailability
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
+                  - logs:*
                 Resource: '*'
 
   ECSTaskRole:

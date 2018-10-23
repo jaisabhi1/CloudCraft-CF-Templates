@@ -18,6 +18,7 @@ sqs = boto3.resource('sqs', region_name=aws_region)
 
 
 def create_dirs():
+    print("Creating directories...")
     for dirs in [resized_dir, thumb_dir]:
         if not os.path.exists(dirs):
             os.makedirs(dirs)
@@ -33,8 +34,9 @@ def process_images():
     """
     for message in get_messages_from_sqs():
         try:
+            print("Getting messages from SQS")
             message_content = json.loads(message.body)
-            image = urllib.parse.quote_plus(message_content
+            image = urllib.unquote_plus(message_content
                                         ['Records'][0]['s3']['object']
                                         ['key']).encode('utf-8')
             s3.download_file(input_bucket_name, image, image)
@@ -55,6 +57,7 @@ def cleanup_files(image):
 
 
 def upload_image(image):
+    print("Uploading image")
     s3.upload_file(resized_dir + '/' + image,
                    output_bucket_name, 'resized/' + image)
     s3.upload_file(thumb_dir + '/' + image,
@@ -72,6 +75,7 @@ def get_messages_from_sqs():
 
 
 def resize_image(image):
+    print("Resizing image")
     img = Image.open(image)
     exif = img._getexif()
     if exif is not None:
@@ -85,20 +89,19 @@ def resize_image(image):
                 if value == 8:
                     img = img.rotate(90)
     img.thumbnail((1024, 768), Image.ANTIALIAS)
-
     try:
         img.save(resized_dir + '/' + image, 'JPEG', quality=100)
-    except IOError:
+    except IOError as e:
         print("Unable to save resized image")
     img.thumbnail((192, 192), Image.ANTIALIAS)
-
     try:
         img.save(thumb_dir + '/' + image, 'JPEG')
-    except IOError:
+    except IOError as e:
         print("Unable to save thumbnail")
 
 
 def main():
+    print("GetAndResizeImages.py starting...")
     create_dirs()
     while True:
         process_images()
