@@ -271,6 +271,18 @@
             "Type": "AWS::EC2::Instance",
             "Properties": {
                 "ImageId": "%ami-43%",
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "/bin/echo '%password%' | /bin/passwd cloud_user --stdin\n",
+                                "/bin/echo \"export PROMPT_COMMAND='history -a'\" >> ~cloud_user/.bash_profile"
+                            ]
+                        ]
+                    }
+                },
                 "InstanceType": "t2.micro",
                 "Tags": [
                     {
