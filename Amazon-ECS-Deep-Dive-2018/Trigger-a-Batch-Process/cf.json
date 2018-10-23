@@ -14,7 +14,7 @@
         },
         "DockerImage": {
             "Type": "String",
-            "Default": "mrichman/ecsbatch",
+            "Default": "linuxacademy/ecs-deep-dive:batch",
             "Description": "Docker repository and image file to deploy as part of the ECS task. In the form repository/image"
         },
         "ECSAMI": {
@@ -643,6 +643,9 @@
                     ]
                 },
                 "Path": "/",
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+                ],
                 "Policies": [
                     {
                         "PolicyName": "ecs-instance",

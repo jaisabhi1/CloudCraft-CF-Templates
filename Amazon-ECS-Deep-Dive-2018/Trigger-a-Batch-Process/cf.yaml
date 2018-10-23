@@ -22,7 +22,7 @@ Parameters:
     Description: Maximum number of instances in the AutoScaling Group and ECS Cluster
   DockerImage:
     Type: String
-    Default: 'mrichman/ecsbatch'
+    Default: 'linuxacademy/ecs-deep-dive:batch'
     Description: Docker repository and image file to deploy as part of the ECS task.
       In the form repository/image
   ECSAMI:
