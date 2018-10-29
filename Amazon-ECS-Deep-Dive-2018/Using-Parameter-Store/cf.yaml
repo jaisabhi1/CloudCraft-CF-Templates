@@ -559,5 +559,5 @@ Outputs:
         - !GetAtt
           - ParameterStoreAccessTest
           - DomainName
-        - 'access-test.sh'
+        - '/access-test.sh'
 
