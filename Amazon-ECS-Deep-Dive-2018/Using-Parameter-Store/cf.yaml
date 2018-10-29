@@ -1,0 +1,563 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Amazon ECS Deep Dive - Learning Activity - Using Parameter Store
+
+Parameters:
+
+  DesiredCapacity:
+    Type: Number
+    Default: '1'
+    Description: Number of desired instances in the AutoScaling Group and ECS Cluster
+
+  MaxSize:
+    Type: Number
+    Default: '1'
+    Description: Maximum number of instances in the AutoScaling Group and ECS Cluster
+
+  ECSAMI:
+    Description: AMI ID
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id
+
+  InstanceType:
+    Description: The EC2 instance type
+    Default: t2.micro
+    Type: String
+
+  SSHLocation:
+    Description: ' The IP address range that can be used to SSH to the EC2 instances'
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: '0.0.0.0/0'
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  HTTPLocation:
+    Description: ' The IP address range that can be used to HTTP to the EC2 instances'
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: '0.0.0.0/0'
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+Mappings:
+  # Hard values for the subnet masks. These masks define
+  # the range of internal IP addresses that can be assigned.
+  # The VPC can have all IP's from 10.0.0.0 to 10.0.255.255
+  # There are two subnets which cover the ranges:
+  #
+  # 10.0.0.0 - 10.0.0.255
+  # 10.0.1.0 - 10.0.1.255
+  #
+  # If you need more IP addresses (perhaps you have so many
+  # instances that you run out) then you can customize these
+  # ranges to add more
+  SubnetConfig:
+    VPC:
+      CIDR: '10.0.0.0/16'
+    PublicOne:
+      CIDR: '10.0.0.0/24'
+    PublicTwo:
+      CIDR: '10.0.1.0/24'
+
+Resources:
+
+  # VPC in which containers will be networked.
+  # It has two public subnets
+  # We distribute the subnets across the first two available subnets
+  # for the region, for high availability.
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: !FindInMap ['SubnetConfig', 'VPC', 'CIDR']
+
+  # Two public subnets, where containers can have public IP addresses
+  PublicSubnetOne:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+         Fn::Select:
+         - 0
+         - Fn::GetAZs: {Ref: 'AWS::Region'}
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap ['SubnetConfig', 'PublicOne', 'CIDR']
+      MapPublicIpOnLaunch: true
+
+  PublicSubnetTwo:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+         Fn::Select:
+         - 1
+         - Fn::GetAZs: {Ref: 'AWS::Region'}
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap ['SubnetConfig', 'PublicTwo', 'CIDR']
+      MapPublicIpOnLaunch: true
+
+  # Setup networking resources for the public subnets. Containers
+  # in the public subnets have public IP addresses and the routing table
+  # sends network traffic via the internet gateway.
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  GatewayAttachement:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref 'InternetGateway'
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachement
+    Properties:
+      RouteTableId: !Ref 'PublicRouteTable'
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'InternetGateway'
+
+  PublicSubnetOneRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetOne
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetTwoRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetTwo
+      RouteTableId: !Ref PublicRouteTable
+
+  ### S3 ###
+
+  ParameterStoreAccessTest:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref ParameterStoreAccessTest
+                - /*
+      Bucket: !Ref ParameterStoreAccessTest
+
+  ### ECS ###
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+
+  ECSAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier: [ !Ref PublicSubnetOne, !Ref PublicSubnetTwo ]
+      LaunchConfigurationName: !Ref 'ContainerInstances'
+      MinSize: '1'
+      MaxSize: !Ref 'MaxSize'
+      DesiredCapacity: !Ref 'DesiredCapacity'
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: '1'
+        MaxBatchSize: '1'
+        PauseTime: PT15M
+        WaitOnResourceSignals: 'true'
+
+  ContainerInstances:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            '01_add_instance_to_cluster':
+              command: !Join
+                - ''
+                - - "#!/bin/bash\n"
+                  - echo ECS_CLUSTER=
+                  - !Ref 'ECSCluster'
+                  - ' >> /etc/ecs/ecs.config'
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Join
+                - ''
+                - - "[main]\n"
+                  - stack=
+                  - !Ref 'AWS::StackId'
+                  - "\n"
+                  - region=
+                  - !Ref 'AWS::Region'
+                  - "\n"
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Join
+                - ''
+                - - "[cfn-auto-reloader-hook]\n"
+                  - "triggers=post.update\n"
+                  - "path=Resources.ContainerInstances.Metadata.AWS::CloudFormation::Init\n"
+                  - 'action=/opt/aws/bin/cfn-init -v '
+                  - '         --stack '
+                  - !Ref 'AWS::StackName'
+                  - '         --resource ContainerInstances '
+                  - '         --region '
+                  - !Ref 'AWS::Region'
+                  - "\n"
+                  - "runas=root\n"
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+    Properties:
+      ImageId: !Ref ECSAMI
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+        - !Ref InstanceSecurityGroup
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      # KeyName: !Ref KeyName
+      UserData: !Base64
+        Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - "yum install -y aws-cfn-bootstrap\n"
+            - '/opt/aws/bin/cfn-init -v '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource ContainerInstances '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - "\n"
+            - '/opt/aws/bin/cfn-signal -e $? '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource ECSAutoScalingGroup '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - "\n"
+            - "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm\n"
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref HTTPLocation
+
+  ECSServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: ecs-service
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - ec2:Describe*
+                  - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+                  - elasticloadbalancing:DeregisterTargets
+                  - elasticloadbalancing:Describe*
+                  - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+                  - elasticloadbalancing:RegisterTargets
+                Resource: '*'
+
+  AmazonEC2ContainerServiceAutoscaleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: application-autoscaling.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: ecsautoscaling
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:DescribeServices
+                  - ecs:UpdateService
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - cloudwatch:DescribeAlarms
+                Resource: '*'
+
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      Policies:
+        - PolicyName: ecs-instance
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:CreateCluster
+                  - ecs:DeregisterContainerInstance
+                  - ecs:DiscoverPollEndpoint
+                  - ecs:Poll
+                  - ecs:RegisterContainerInstance
+                  - ecs:StartTelemetrySession
+                  - ecs:Submit*
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - logs:*
+                Resource: '*'
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref 'EC2Role'
+
+  ### KMS ###
+
+  ProdApp1Key:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "prod-app1"
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: "prod-app1"
+        Statement:
+          -
+            Sid: "Allow administration of the key"
+            Effect: "Allow"
+            Principal: "*"
+            Action:
+              - "kms:*"
+            Resource: "*"
+
+  ProdApp1Alias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/prod-app1
+      TargetKeyId:
+        Ref: ProdApp1Key
+
+  LicenseCodeKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "license-code"
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: "license-code"
+        Statement:
+          -
+            Sid: "Allow administration of the key"
+            Effect: "Allow"
+            Principal: "*"
+            Action:
+              - "kms:*"
+            Resource: "*"
+
+  LicenseCodeAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/license-code
+      TargetKeyId:
+        Ref: LicenseCodeKey
+
+  ### SSM Parameter Store ###
+
+  # execution role for the custom resource function, needs KMS and SSM access
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+          - Effect: Allow
+            Action:
+              - kms:*
+              - ssm:*
+            Resource: "*"
+
+  BotoCustomResource:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      Runtime: python3.6
+      Timeout: 30
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          from botocore.vendored import requests
+
+
+          def lambda_handler(event, context):
+
+              kms_client = boto3.client('kms')
+              ssm_client = boto3.client('ssm')
+
+              res = kms_client.describe_key(KeyId='alias/prod-app1')
+              prodApp1Key = res['KeyMetadata']['KeyId']
+              print('prod-app1:', prodApp1Key)
+
+              res = kms_client.describe_key(KeyId='alias/license-code')
+              licenseCodeKey = res['KeyMetadata']['KeyId']
+              print('license-code:', licenseCodeKey)
+
+              response = ssm_client.put_parameter(
+                  Name='prod.app1.db-pass',
+                  Description='Production Application 1 DB Password',
+                  Value='P@ssw0rd1',
+                  Type='SecureString',
+                  KeyId=prodApp1Key,
+                  Overwrite=True,
+              )
+
+              print('RESPONSE:n' + json.dumps(response))
+
+              response = ssm_client.put_parameter(
+                  Name='prod.app2.user-name',
+                  Description='Production Application 2 Username',
+                  Value='johnsmith',
+                  Type='String',
+                  Overwrite=True,
+              )
+
+              print('RESPONSE:n' + json.dumps(response))
+
+              response = ssm_client.put_parameter(
+                  Name='general.license-code',
+                  Description='General license code',
+                  Value='xJee2HesQy0',
+                  Type='SecureString',
+                  KeyId=licenseCodeKey,
+                  Overwrite=True,
+              )
+
+              print('RESPONSE:n' + json.dumps(response))
+
+              responseStatus = 'SUCCESS'
+              responseData = {}
+
+              if event['RequestType'] == 'Delete':
+                  sendResponse(event, context, responseStatus, responseData)
+
+              responseData = {'Success': 'Lambda function invoked'}
+              sendResponse(event, context, responseStatus, responseData)
+
+
+          def sendResponse(event, context, responseStatus, responseData):
+              responseBody = {'Status': responseStatus,
+                              'Reason': 'See the details in CloudWatch Log Stream: ' + context.log_stream_name,
+                              'PhysicalResourceId': context.log_stream_name,
+                              'StackId': event['StackId'],
+                              'RequestId': event['RequestId'],
+                              'LogicalResourceId': event['LogicalResourceId'],
+                              'Data': responseData}
+              print('RESPONSE BODY:n' + json.dumps(responseBody))
+              try:
+                  req = requests.put(event['ResponseURL'], data=json.dumps(responseBody))
+                  if req.status_code != 200:
+                      print(req.text)
+                      raise Exception(
+                          'Recieved non 200 response while sending response to CFN.')
+                  return
+              except requests.exceptions.RequestException as e:
+                  print(e)
+                  raise
+
+
+  InvokeBotoCustomResource:
+    Type: Custom::LambdaCallout
+    DependsOn: [ ProdApp1Alias, LicenseCodeAlias ]
+    Properties:
+      ServiceToken: !GetAtt BotoCustomResource.Arn
+
+Outputs:
+  ProdApp1Key:
+    Description: Production App 1 KMS Key
+    Value: !Ref ProdApp1Key
+  LicenseCodeKey:
+    Description: License code KMS key
+    Value: !Ref LicenseCodeKey
+  pubIpAddress1:
+    Description: S3 URI for access-test.sh
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !GetAtt
+          - ParameterStoreAccessTest
+          - DomainName
+        - 'access-test.sh'
+
