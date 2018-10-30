@@ -397,12 +397,26 @@ Resources:
           PortMappings:
             - ContainerPort: 80
           ReadonlyRootFilesystem: false
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+                awslogs-group: !Ref AWS::StackName
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: 'ecs'
           EntryPoint:
             - "sh"
             - "-c"
-          Command:
-            - !Sub |
-              /bin/sh -c \"apt-get update ; apt-get -y install curl ; curl -O https://s3.amazonaws.com/${ParameterStoreAccessTest}/access-test.sh ; chmod +x access-test.sh ; ./access-test.sh ; nginx -g 'daemon off;'\"
+          Command: [
+            "/bin/sh -c \"apt-get update ; apt-get -y install curl ; curl -O https://s3.amazonaws.com/${ParameterStoreAccessTest}/access-test.sh ; chmod +x access-test.sh ; ./access-test.sh ; nginx -g 'daemon off;'\""
+          ]
+
+  # https://aws.amazon.com/blogs/compute/managing-secrets-for-amazon-ecs-applications-using-parameter-store-and-iam-roles-for-tasks/
+
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+        LogGroupName: !Ref AWS::StackName
+        RetentionInDays: 1
 
   ### KMS ###
 
