@@ -19,9 +19,7 @@ aws iam attach-role-policy --role-name prod-app1 --policy-arn "arn:aws:iam::$AWS
 
 ## Task 2: Upload Test Script to S3
 
-Upload `access-test.sh` to an S3 bucket in your account. Create a new bucket, or use an existing one.
-
-Make sure the object is publicly accessible and note down the object link, for example `https://s3.amazonaws.com/my-new-bucket/access-test.sh`.
+Upload `access-test.sh` to the public S3 bucket automatically generated in your account.
 
 ## Task 3: Register Task Definition
 

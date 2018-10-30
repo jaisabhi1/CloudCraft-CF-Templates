@@ -565,6 +565,64 @@
                 ]
             }
         },
+        "ProdApp1TaskRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "ecs-tasks.amazonaws.com"
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+                ]
+            }
+        },
+        "TaskDefinition": {
+            "Type": "AWS::ECS::TaskDefinition",
+            "Properties": {
+                "Family": "access-test",
+                "RequiresCompatibilities": [
+                    "EC2"
+                ],
+                "TaskRoleArn": {
+                    "Ref": "ProdApp1TaskRole"
+                },
+                "ContainerDefinitions": [
+                    {
+                        "Name": "access-test",
+                        "Essential": true,
+                        "Cpu": 512,
+                        "Memory": 490,
+                        "Image": "nginx",
+                        "PortMappings": [
+                            {
+                                "ContainerPort": 80
+                            }
+                        ],
+                        "ReadonlyRootFilesystem": false,
+                        "EntryPoint": [
+                            "sh",
+                            "-c"
+                        ],
+                        "Command": [
+                            {
+                                "Fn::Sub": "/bin/sh -c \\\"apt-get update ; apt-get -y install curl ; curl -O https://s3.amazonaws.com/${ParameterStoreAccessTest}/access-test.sh ; chmod +x access-test.sh ; ./access-test.sh ; nginx -g 'daemon off;'\\\"\n"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
         "ProdApp1Key": {
             "Type": "AWS::KMS::Key",
             "Properties": {
@@ -708,34 +766,10 @@
         }
     },
     "Outputs": {
-        "ProdApp1Key": {
-            "Description": "Production App 1 KMS Key",
-            "Value": {
-                "Ref": "ProdApp1Key"
-            }
-        },
-        "LicenseCodeKey": {
-            "Description": "License code KMS key",
-            "Value": {
-                "Ref": "LicenseCodeKey"
-            }
-        },
         "pubIpAddress1": {
             "Description": "S3 URI for access-test.sh",
             "Value": {
-                "Fn::Join": [
-                    "",
-                    [
-                        "https://",
-                        {
-                            "Fn::GetAtt": [
-                                "ParameterStoreAccessTest",
-                                "DomainName"
-                            ]
-                        },
-                        "/access-test.sh"
-                    ]
-                ]
+                "Fn::Sub": "https://s3.amazonaws.com/${ParameterStoreAccessTest}/access-test.sh"
             }
         }
     }
