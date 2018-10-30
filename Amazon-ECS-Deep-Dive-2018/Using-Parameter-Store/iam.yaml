@@ -17,6 +17,7 @@ Statement:
   - ecs:*
   - iam:AttachRolePolicy
   - iam:AddRoleToInstanceProfile
+  - iam:CreatePolicy
   - iam:CreateRole
   - iam:CreateInstanceProfile
   - iam:Get*

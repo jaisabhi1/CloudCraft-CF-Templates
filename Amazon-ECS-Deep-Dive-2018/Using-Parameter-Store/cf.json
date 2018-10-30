@@ -178,44 +178,6 @@
                 }
             }
         },
-        "ParameterStoreAccessTest": {
-            "Type": "AWS::S3::Bucket",
-            "Properties": {
-                "AccessControl": "PublicRead"
-            }
-        },
-        "BucketPolicy": {
-            "Type": "AWS::S3::BucketPolicy",
-            "Properties": {
-                "PolicyDocument": {
-                    "Id": "MyPolicy",
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Sid": "PublicReadForGetBucketObjects",
-                            "Effect": "Allow",
-                            "Principal": "*",
-                            "Action": "s3:GetObject",
-                            "Resource": {
-                                "Fn::Join": [
-                                    "",
-                                    [
-                                        "arn:aws:s3:::",
-                                        {
-                                            "Ref": "ParameterStoreAccessTest"
-                                        },
-                                        "/*"
-                                    ]
-                                ]
-                            }
-                        }
-                    ]
-                },
-                "Bucket": {
-                    "Ref": "ParameterStoreAccessTest"
-                }
-            }
-        },
         "ECSCluster": {
             "Type": "AWS::ECS::Cluster"
         },
@@ -606,7 +568,8 @@
                         "Image": "nginx",
                         "PortMappings": [
                             {
-                                "ContainerPort": 80
+                                "ContainerPort": 80,
+                                "HostPort": 80
                             }
                         ],
                         "ReadonlyRootFilesystem": false,
@@ -627,7 +590,9 @@
                             "-c"
                         ],
                         "Command": [
-                            "/bin/sh -c \"apt-get update ; apt-get -y install curl ; curl -O https://s3.amazonaws.com/${ParameterStoreAccessTest}/access-test.sh ; chmod +x access-test.sh ; ./access-test.sh ; nginx -g 'daemon off;'\""
+                            {
+                                "Fn::Sub": "/bin/sh -c \"apt-get update ; apt-get -y install curl ; curl -O https://raw.githubusercontent.com/linuxacademy/ecs-deep-dive-2018/master/parameter-store/access-test.sh ; head access-test.sh ; chmod +x access-test.sh ; ./access-test.sh ; nginx -g 'daemon off; error_log /dev/stdout debug;'\""
+                            }
                         ]
                     }
                 ]
@@ -781,14 +746,6 @@
                         "Arn"
                     ]
                 }
-            }
-        }
-    },
-    "Outputs": {
-        "pubIpAddress1": {
-            "Description": "S3 URI for access-test.sh",
-            "Value": {
-                "Fn::Sub": "https://s3.amazonaws.com/${ParameterStoreAccessTest}/access-test.sh"
             }
         }
     }

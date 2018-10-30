@@ -6,7 +6,7 @@ SecureString SSM Parameters can not yet be *created* by CloudFormation.
 
 Lambda function is created and invoked by CloudFormation, which handles the SSM Parameter creation.
 
-## Task 1: Create an ECS Task IAM Role and Policy
+## Task 1: Create and Attach IAM Policy to ECS Task IAM Role
 
 <https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html#cfn-iam-role-templateexamples>
 
@@ -17,21 +17,11 @@ aws iam create-policy --policy-name prod-app1 --policy-document file://app1-secr
 aws iam attach-role-policy --role-name prod-app1 --policy-arn "arn:aws:iam::$AWS_ACCOUNT_ID:policy/prod-app1"
 ```
 
-## Task 2: Upload Test Script to S3
-
-Upload `access-test.sh` to the public S3 bucket automatically generated in your account.
-
-## Task 3: Register Task Definition
-
-Be sure to set values for `ACCOUNT_ID` and `S3_URI` in `create-taskdef.sh` before running this script.
-
-`./create-taskdef.sh` will create a task definition called `access-test`.
-
-## Task 4: Run Task
+## Task 2: Run Task
 
 Run the task definition `access-test` created in the previous step.
 
-## Task 5: Verify Access
+## Task 3: Verify Access
 
 After the task is in a running state, check the public IP of the container instance and navigate to the following page:
 

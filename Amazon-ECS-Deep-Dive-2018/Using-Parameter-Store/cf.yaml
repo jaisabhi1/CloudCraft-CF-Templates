@@ -137,28 +137,28 @@ Resources:
 
   ### S3 ###
 
-  ParameterStoreAccessTest:
-    Type: AWS::S3::Bucket
-    Properties:
-      AccessControl: PublicRead
+  # ParameterStoreAccessTest:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     AccessControl: PublicRead
 
-  BucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      PolicyDocument:
-        Id: MyPolicy
-        Version: 2012-10-17
-        Statement:
-          - Sid: PublicReadForGetBucketObjects
-            Effect: Allow
-            Principal: '*'
-            Action: 's3:GetObject'
-            Resource: !Join
-              - ''
-              - - 'arn:aws:s3:::'
-                - !Ref ParameterStoreAccessTest
-                - /*
-      Bucket: !Ref ParameterStoreAccessTest
+  # BucketPolicy:
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     PolicyDocument:
+  #       Id: MyPolicy
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Sid: PublicReadForGetBucketObjects
+  #           Effect: Allow
+  #           Principal: '*'
+  #           Action: 's3:GetObject'
+  #           Resource: !Join
+  #             - ''
+  #             - - 'arn:aws:s3:::'
+  #               - !Ref ParameterStoreAccessTest
+  #               - /*
+  #     Bucket: !Ref ParameterStoreAccessTest
 
   ### ECS ###
 
@@ -395,7 +395,9 @@ Resources:
           Memory: 490
           Image: 'nginx'
           PortMappings:
-            - ContainerPort: 80
+            -
+              ContainerPort: 80
+              HostPort: 80
           ReadonlyRootFilesystem: false
           LogConfiguration:
             LogDriver: awslogs
@@ -407,7 +409,7 @@ Resources:
             - "sh"
             - "-c"
           Command: [
-            "/bin/sh -c \"apt-get update ; apt-get -y install curl ; curl -O https://s3.amazonaws.com/${ParameterStoreAccessTest}/access-test.sh ; chmod +x access-test.sh ; ./access-test.sh ; nginx -g 'daemon off;'\""
+            !Sub "/bin/sh -c \"apt-get update ; apt-get -y install curl ; curl -O https://raw.githubusercontent.com/linuxacademy/ecs-deep-dive-2018/master/parameter-store/access-test.sh ; head access-test.sh ; chmod +x access-test.sh ; ./access-test.sh ; nginx -g 'daemon off; error_log /dev/stdout debug;'\""
           ]
 
   # https://aws.amazon.com/blogs/compute/managing-secrets-for-amazon-ecs-applications-using-parameter-store-and-iam-roles-for-tasks/
@@ -595,7 +597,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt BotoCustomResource.Arn
 
-Outputs:
-  pubIpAddress1:
-    Description: S3 URI for access-test.sh
-    Value: !Sub "https://s3.amazonaws.com/${ParameterStoreAccessTest}/access-test.sh"
+# Outputs:
+#   pubIpAddress1:
+#     Description: S3 URI for access-test.sh
+#     Value: !Sub "https://s3.amazonaws.com/${ParameterStoreAccessTest}/access-test.sh"
