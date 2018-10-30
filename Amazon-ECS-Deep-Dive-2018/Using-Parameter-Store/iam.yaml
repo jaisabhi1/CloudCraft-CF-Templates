@@ -18,8 +18,10 @@ Statement:
   - iam:AttachRolePolicy
   - iam:AddRoleToInstanceProfile
   - iam:CreatePolicy
+  - iam:CreatePolicyVersion
   - iam:CreateRole
   - iam:CreateInstanceProfile
+  - iam:DetachRolePolicy
   - iam:Get*
   - iam:List*
   - iam:PassRole
