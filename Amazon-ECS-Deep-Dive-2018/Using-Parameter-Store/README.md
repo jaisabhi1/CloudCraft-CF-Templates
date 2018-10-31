@@ -1,5 +1,7 @@
 # Using Parameter Store
 
+<https://cloudcraft.linuxacademy.com/#/labs/details/a006fa86-ac03-48f8-ab62-b55ca2c19da8?courseId=261>
+
 KMS Keys are already created by the CF stack.
 
 SecureString SSM Parameters can not yet be *created* by CloudFormation.
@@ -10,12 +12,7 @@ Lambda function is created and invoked by CloudFormation, which handles the SSM 
 
 <https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html#cfn-iam-role-templateexamples>
 
-```bash
-AWS_ACCOUNT_ID=<Your_AWS_Account_ID>
-aws iam create-role --role-name prod-app1 --assume-role-policy-document file://ecs-tasks-trust-policy.json
-aws iam create-policy --policy-name prod-app1 --policy-document file://app1-secret-access.json
-aws iam attach-role-policy --role-name prod-app1 --policy-arn "arn:aws:iam::$AWS_ACCOUNT_ID:policy/prod-app1"
-```
+Use `app1-secret-access.json` as a template.
 
 ## Task 2: Run Task
 
@@ -27,6 +24,4 @@ After the task is in a running state, check the public IP of the container insta
 
 `http://<Container-Instance-Public-IP>/ecs.html`
 
-Only the first command with the `--no-with-decryption` parameter should work. The policy allows access to the parameter in Parameter Store but there’s no access to the KMS key.
-
-The second command should fail with an access denied error.
+The commands with access to both the parameters and keys should work. Others will fail with an Access Denied Exception.
