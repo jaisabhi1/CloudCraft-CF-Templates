@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Amazon EKS Sample VPC",
+    "Description": "Amazon EKS Cluster",
     "Parameters": {
         "VpcBlock": {
             "Type": "String",
@@ -375,7 +375,9 @@
         "EKSCluster": {
             "Type": "AWS::EKS::Cluster",
             "Properties": {
-                "Name": "prod",
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-Cluster"
+                },
                 "Version": "1.10",
                 "RoleArn": {
                     "Fn::GetAtt": [
