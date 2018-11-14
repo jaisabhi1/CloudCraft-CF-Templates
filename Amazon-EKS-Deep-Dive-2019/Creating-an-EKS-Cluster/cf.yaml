@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Creating an EKS Cluster'
+  
+Resources:
+  
+  AccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: cloud_user
+
+Outputs:
+  
+  pubIpAddress1:
+    Description: cloud_user Access Key
+    Value: !Ref AccessKey
+  
+  pubIpAddress2:
+    Description: cloud_user Secret Access Key
+    Value: !GetAtt AccessKey.SecretAccessKey
