@@ -71,7 +71,13 @@ Ensure that `aws-iam-authenticator` is in your `PATH`.
 
 ## Enable worker Nodes to Join Cluster
 
-Edit `aws-auth-cm.yaml` in this directory. Set `rolearn` to the `NodeInstanceRole` ARN value from the worker node group CloudFormation stack output you ran previously.
+Apply the `aws-auth` ConfigMap to the cluster.
+
+Download the configuration map:
+
+`curl -O https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/aws-auth-cm.yaml`
+
+Edit `aws-auth-cm.yaml`, setting `rolearn` to the `NodeInstanceRole` ARN value from the worker node group CloudFormation stack output you ran previously.
 
 Apply the configuration:
 
@@ -80,6 +86,10 @@ Apply the configuration:
 Watch the nodes join the cluster:
 
 `kubectl get nodes --watch`
+
+You can verify that the ConfigMap has been applied using this command:
+
+`kubectl describe configmap -n kube-system aws-auth`
 
 ## Deploy the Kubernetes Dashboard
 
