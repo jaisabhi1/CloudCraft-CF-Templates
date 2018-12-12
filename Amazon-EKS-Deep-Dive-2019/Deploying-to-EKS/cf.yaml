@@ -90,7 +90,7 @@ Resources:
   EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: '%ami-43%'     
+      ImageId: '%ami-43%'
       InstanceType: t2.micro
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
@@ -98,7 +98,7 @@ Resources:
           DeleteOnTermination: true
           SubnetId: !Ref PublicSubnet
           GroupSet:
-            - !Ref InstanceSecurityGroup            
+            - !Ref InstanceSecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
@@ -125,10 +125,25 @@ Resources:
           chmod 600 /home/cloud_user/.aws/config
           chown cloud_user:cloud_user /home/cloud_user/.aws/credentials
           chmod 600 /home/cloud_user/.aws/credentials
-          /usr/local/bin/eksctl create cluster --region=us-east-1 --node-type=t2.medium --zones=us-east-1a,us-east-1b,us-east-1d 2>&1 | tee /home/cloud_user/eksctl.log
+          AWS_ACCESS_KEY_ID=${AccessKey} AWS_SECRET_ACCESS_KEY=${AccessKey.SecretAccessKey} AWS_REGION=us-east-1 /usr/local/bin/eksctl create cluster --region=us-east-1 --node-type=t2.medium --zones=us-east-1a,us-east-1b,us-east-1d >> /var/log/eksctl.log 2>&1
+          mkdir -p /home/cloud_user/.kube
+          cp ~/.kube/config /home/cloud_user/.kube
+          chown cloud_user:cloud_user /home/cloud_user/.kube/config
+          chmod 600 /home/cloud_user/.kube/config
+          /opt/aws/bin/cfn-signal -e $? -r "eksctl complete" '${WaitHandle}'
       Tags:
         - Key: Name
           Value: Bastion Host
+  
+  WaitHandle: 
+    Type: AWS::CloudFormation::WaitConditionHandle
+    
+  WaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: EC2Instance
+    Properties: 
+      Handle: !Ref WaitHandle
+      Timeout: '1800' # Wait up to 30 mins
 
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
