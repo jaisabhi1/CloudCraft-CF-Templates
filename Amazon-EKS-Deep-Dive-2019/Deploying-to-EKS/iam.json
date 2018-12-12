@@ -2,7 +2,7 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "ECSFullAccess",
+            "Sid": "EKSFullAccess",
             "Effect": "Allow",
             "Action": [
                 "application-autoscaling:*",
@@ -17,17 +17,11 @@
                 "events:*",
                 "ecr:*",
                 "eks:*",
-                "iam:AttachRolePolicy",
-                "iam:AddRoleToInstanceProfile",
-                "iam:CreateRole",
-                "iam:CreateInstanceProfile",
-                "iam:Get*",
-                "iam:List*",
-                "iam:PassRole",
-                "iam:PutRolePolicy",
+                "iam:*",
                 "logs:*",
                 "route53:*",
                 "servicediscovery:*",
+                "sns:*",
                 "ssm:*",
                 "tag:*"
             ],
