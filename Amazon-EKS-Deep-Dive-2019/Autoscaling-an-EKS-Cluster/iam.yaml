@@ -1,0 +1,25 @@
+Version: '2012-10-17'
+Statement:
+  - Sid: EKSFullAccess
+    Effect: Allow
+    Action:
+      - application-autoscaling:*
+      - autoscaling:*
+      - cloudformation:*
+      - cloudtrail:*
+      - cloudwatch:*
+      - config:*
+      - ec2:*
+      - ec2messages:*
+      - elasticloadbalancing:*
+      - events:*
+      - ecr:*
+      - eks:*
+      - iam:*
+      - logs:*
+      - route53:*
+      - servicediscovery:*
+      - sns:*
+      - ssm:*
+      - tag:*
+    Resource: '*'
