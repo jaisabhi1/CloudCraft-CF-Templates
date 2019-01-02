@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Description:
-  This template deploys a VPC, with a public subnet. It deploys an Internet 
-  Gateway, with a default route on the public subnet. It deploys an EC2 instance 
+  This template deploys a VPC, with a public subnet. It deploys an Internet
+  Gateway, with a default route on the public subnet. It deploys an EC2 instance
   in the public subnet to serve as a bastion host.
 
 Parameters:
@@ -79,7 +79,7 @@ Resources:
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet
-  
+
   NoIngressSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -107,6 +107,12 @@ Resources:
           yum update -y
           yum install -y git jq
           pip install --upgrade awscli
+          curl --silent "https://raw.githubusercontent.com/linuxacademy/eks-deep-dive-2019/master/3-LA1-Autoscaling/asg-policy.json" -o /home/cloud_user/asg-policy.json
+          chown cloud_user:cloud_user /home/cloud_user/asg-policy.json
+          curl --silent "https://raw.githubusercontent.com/linuxacademy/eks-deep-dive-2019/master/3-LA1-Autoscaling/cluster_autoscaler.yaml" -o /home/cloud_user/cluster_autoscaler.yaml
+          chown cloud_user:cloud_user /home/cloud_user/cluster_autoscaler.yaml
+          curl --silent "https://raw.githubusercontent.com/linuxacademy/eks-deep-dive-2019/master/3-LA1-Autoscaling/nginx.yaml" -o /home/cloud_user/nginx.yaml
+          chown cloud_user:cloud_user /home/cloud_user/nginx.yaml
           curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_linux_amd64.tar.gz" | tar xz -C /tmp
           mv /tmp/eksctl /usr/local/bin
           curl --silent -O "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl"
@@ -129,23 +135,23 @@ Resources:
           chmod 600 /home/cloud_user/.aws/credentials
           export PATH=/usr/local/bin:$PATH
           echo "WaitHandle: ${WaitHandle}"
-          AWS_ACCESS_KEY_ID=${AccessKey} AWS_SECRET_ACCESS_KEY=${AccessKey.SecretAccessKey} AWS_REGION=us-east-1 /usr/local/bin/eksctl create cluster --region=us-east-1 --node-type=t2.medium --zones=us-east-1a,us-east-1b,us-east-1d --verbose=4 >> /var/log/eksctl.log 2>&1          
+          AWS_ACCESS_KEY_ID=${AccessKey} AWS_SECRET_ACCESS_KEY=${AccessKey.SecretAccessKey} AWS_REGION=us-east-1 /usr/local/bin/eksctl create cluster --region=us-east-1 --node-type=t2.medium --verbose=4 >> /var/log/eksctl.log 2>&1
           mkdir -p /home/cloud_user/.kube
           cp /.kube/config /home/cloud_user/.kube
           chown -R cloud_user:cloud_user /home/cloud_user/.kube
-          chmod 600 /home/cloud_user/.kube/config          
+          chmod 600 /home/cloud_user/.kube/config
           /opt/aws/bin/cfn-signal -e 0 -r "eksctl complete" '${WaitHandle}'
       Tags:
         - Key: Name
           Value: Bastion Host
-  
-  WaitHandle: 
+
+  WaitHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
-    
+
   WaitCondition:
     Type: AWS::CloudFormation::WaitCondition
     DependsOn: EC2Instance
-    Properties: 
+    Properties:
       Handle: !Ref WaitHandle
       Timeout: '3600' # Wait up to 60 mins
 
@@ -174,7 +180,7 @@ Outputs:
   pubIpAddress2:
     Description: cloud_user Access Key
     Value: !Ref AccessKey
-  
+
   pubIpAddress3:
     Description: cloud_user Secret Access Key
     Value: !GetAtt AccessKey.SecretAccessKey
