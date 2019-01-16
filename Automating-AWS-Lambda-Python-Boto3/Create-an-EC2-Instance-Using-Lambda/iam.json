@@ -2,16 +2,15 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "LambdaS3EC2",
+            "Sid": "LambdaEC2",
             "Effect": "Allow",
             "Action": [
-                "cloudwatch:*",
+                "cloudformation:*",
                 "ec2:*",
-                "events:*",
+                "iam:*",
+                "kms:*",
                 "lambda:*",
-                "logs:*",
-                "s3:*",
-                "tag:*"
+                "logs:*"
             ],
             "Resource": "*"
         }
