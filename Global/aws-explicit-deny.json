@@ -13,14 +13,15 @@
                 "directconnect:*",
                 "route53domains:*",
                 "redshift:PurchaseReservedNodeOffering",
-                "lightsail:*",
                 "aws-portal:ModifyBilling",
                 "budgets:ModifyBudget",
                 "ec2:PurchaseReservedInstancesOffering",
                 "dynamodb:RestoreTableFromBackup",
                 "rds:PurchaseReservedInstancesOffering",
                 "route53:EnableDomainAutoRenew",
-                "route53:DeleteHostedZone"
+                "route53:DeleteHostedZone",
+                "es:PurchaseReservedElasticsearchInstance",
+                "dynamodb:PurchaseReservedCapacityOfferings"
             ],
             "Resource": [
                 "*"
