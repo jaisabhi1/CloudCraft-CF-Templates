@@ -1,0 +1,19 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "LambdaS3EC2",
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:*",
+                "ec2:*",
+                "events:*",
+                "lambda:*",
+                "logs:*",
+                "s3:*",
+                "tag:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
