@@ -1,5 +1,7 @@
 # Create an EC2 Instance Using Lambda
 
+<https://cloudcraft.linuxacademy.com/#/labs/details/b6a50e14-3009-420c-af49-c81c3df0e6e5?courseId=313>
+
 In this AWS hands-on lab, you will write a Lambda function which will create an EC2 instance. This Lambda function will be written in Python using the Boto3 library. You will also create a custom Lambda execution policy. When you're done, you will be able to SSH into the new EC2 instance.
 
 ## Tasks
