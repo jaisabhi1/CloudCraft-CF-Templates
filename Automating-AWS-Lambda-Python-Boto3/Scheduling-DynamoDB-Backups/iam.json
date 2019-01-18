@@ -6,12 +6,16 @@
             "Effect": "Allow",
             "Action": [
                 "cloudformation:*",
+                "cloudwatch:*",
                 "dynamodb:*",
+                "events:*",
                 "iam:*",
                 "kms:*",
                 "lambda:*",
                 "logs:*",
-                "s3:*"
+                "s3:*",
+                "resource-groups:*",
+                "tags:*"
             ],
             "Resource": "*"
         }

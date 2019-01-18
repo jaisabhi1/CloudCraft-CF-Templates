@@ -78,5 +78,3 @@ Resources:
 
   BackupBucket:
     Type: AWS::S3::Bucket
-    Properties:
-      BucketName: DynamoDB-Person-Backup

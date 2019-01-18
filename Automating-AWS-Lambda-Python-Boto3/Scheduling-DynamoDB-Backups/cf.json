@@ -101,10 +101,7 @@
             }
         },
         "BackupBucket": {
-            "Type": "AWS::S3::Bucket",
-            "Properties": {
-                "BucketName": "DynamoDB-Person-Backup"
-            }
+            "Type": "AWS::S3::Bucket"
         }
     }
 }
