@@ -1,0 +1,110 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "PersonTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+                "TableName": "Person",
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "id",
+                        "AttributeType": "N"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "id",
+                        "KeyType": "HASH"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 5,
+                    "WriteCapacityUnits": 5
+                }
+            }
+        },
+        "LambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "dynamodbAccessRole",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:*"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:*"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "InitFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "ZipFile": "import json\nimport boto3\nimport cfnresponse\ndef lambda_handler(event, context):\n    print(json.dumps(event))\n    try:\n        dynamodb = boto3.resource('dynamodb')\n        table = dynamodb.Table(\"Person\")\n        table.put_item(\n            Item={'id': 1, 'last_name': 'Doe', 'first_name': 'John'})\n        table.put_item(\n            Item={'id': 2, 'last_name': 'Doe', 'first_name': 'Jane'})\n        table.put_item(\n            Item={'id': 3, 'last_name': 'Bloggs', 'first_name': 'Joe'})\n        responseData = {}\n        cfnresponse.send(event, context, cfnresponse.SUCCESS, {})\n    except Exception:\n        cfnresponse.send(event, context, cfnresponse.FAILED, {})\n"
+                },
+                "Handler": "index.lambda_handler",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "LambdaRole",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "python3.6",
+                "Timeout": 60
+            }
+        },
+        "InitializeDynamoDB": {
+            "Type": "Custom::InitFunction",
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "InitFunction",
+                        "Arn"
+                    ]
+                },
+                "DynamoTableName": {
+                    "Ref": "PersonTable"
+                }
+            }
+        },
+        "BackupBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "BucketName": "DynamoDB-Person-Backup"
+            }
+        }
+    }
+}

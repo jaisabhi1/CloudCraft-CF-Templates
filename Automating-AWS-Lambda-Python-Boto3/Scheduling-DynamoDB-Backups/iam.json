@@ -1,0 +1,19 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "SchedulingDynamoDBBackups",
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:*",
+                "dynamodb:*",
+                "iam:*",
+                "kms:*",
+                "lambda:*",
+                "logs:*",
+                "s3:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

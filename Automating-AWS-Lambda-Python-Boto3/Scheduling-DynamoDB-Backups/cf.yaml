@@ -75,3 +75,8 @@ Resources:
     Properties:
       ServiceToken: !GetAtt InitFunction.Arn
       DynamoTableName: !Ref PersonTable
+
+  BackupBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: DynamoDB-Person-Backup
