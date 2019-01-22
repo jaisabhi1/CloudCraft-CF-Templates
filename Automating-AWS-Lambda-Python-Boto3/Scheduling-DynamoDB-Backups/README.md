@@ -20,9 +20,13 @@ Make sure you are in the `us-east-1` region.
 
 ## Video Description(s)
 
-### Lab Walkthrough
+### Part 1
 
-In this video, we'll walk through the process of authoring our IAM Role for the Lambda function, creating the Lambda function itself, and then testing the Lambda function. Once the Lambda function is created, we will create a CloudWatch Rule to schedule the Lambda function to run at regular intervals. This will perform backups of the DynamoDB table, and remove stale backups.
+In this video, we'll walk through the process of authoring our IAM Role for the Lambda function, and creating the Lambda function itself.
+
+### Part 2
+
+In this video, we will test our Lambda function, and observe that a backup was created. We will then create a CloudWatch Rule to schedule the Lambda function to run at regular intervals. This will perform backups of the DynamoDB table, and remove stale backups.
 
 ## Tasks
 
