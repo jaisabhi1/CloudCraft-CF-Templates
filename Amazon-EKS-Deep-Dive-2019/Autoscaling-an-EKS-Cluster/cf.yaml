@@ -135,12 +135,13 @@ Resources:
           chmod 600 /home/cloud_user/.aws/credentials
           export PATH=/usr/local/bin:$PATH
           echo "WaitHandle: ${WaitHandle}"
-          AWS_ACCESS_KEY_ID=${AccessKey} AWS_SECRET_ACCESS_KEY=${AccessKey.SecretAccessKey} AWS_REGION=us-east-1 /usr/local/bin/eksctl create cluster --region=us-east-1 --node-type=t2.medium --verbose=4 >> /var/log/eksctl.log 2>&1
+          AWS_ACCESS_KEY_ID=${AccessKey} AWS_SECRET_ACCESS_KEY=${AccessKey.SecretAccessKey} AWS_REGION=us-east-1 /usr/local/bin/eksctl create cluster --region=us-east-1 --node-type=t2.medium --zones=us-east-1a,us-east-1b,us-east-1d --verbose=4 >> /var/log/eksctl.log 2>&1
+          /opt/aws/bin/cfn-signal -e $? -r "eksctl complete" '${WaitHandle}'
           mkdir -p /home/cloud_user/.kube
           cp /.kube/config /home/cloud_user/.kube
           chown -R cloud_user:cloud_user /home/cloud_user/.kube
           chmod 600 /home/cloud_user/.kube/config
-          /opt/aws/bin/cfn-signal -e 0 -r "eksctl complete" '${WaitHandle}'
+          /opt/aws/bin/cfn-signal -e $? -r "kube config ready" '${WaitHandle}'
       Tags:
         - Key: Name
           Value: Bastion Host
@@ -153,6 +154,7 @@ Resources:
     DependsOn: EC2Instance
     Properties:
       Handle: !Ref WaitHandle
+      Count: 2
       Timeout: '3600' # Wait up to 60 mins
 
   InstanceSecurityGroup:
