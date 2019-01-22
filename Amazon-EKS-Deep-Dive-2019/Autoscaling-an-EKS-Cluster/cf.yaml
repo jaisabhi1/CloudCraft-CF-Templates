@@ -140,8 +140,7 @@ Resources:
           mkdir -p /home/cloud_user/.kube
           cp /.kube/config /home/cloud_user/.kube
           chown -R cloud_user:cloud_user /home/cloud_user/.kube
-          chmod 600 /home/cloud_user/.kube/config
-          /opt/aws/bin/cfn-signal -e $? -r "kube config ready" '${WaitHandle}'
+          chmod 600 /home/cloud_user/.kube/config      
       Tags:
         - Key: Name
           Value: Bastion Host
@@ -154,7 +153,6 @@ Resources:
     DependsOn: EC2Instance
     Properties:
       Handle: !Ref WaitHandle
-      Count: 2
       Timeout: '3600' # Wait up to 60 mins
 
   InstanceSecurityGroup:
