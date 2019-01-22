@@ -1,0 +1,17 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "Source": {
+            "Type": "AWS::S3::Bucket"
+        },
+        "Transcoded": {
+            "Type": "AWS::S3::Bucket"
+        },
+        "TranscoderTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "TopicName": "Transcoder"
+            }
+        }
+    }
+}
