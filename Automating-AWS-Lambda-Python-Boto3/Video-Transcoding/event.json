@@ -27,7 +27,7 @@
           "arn": "arn:aws:s3:::18675309jenny"
         },
         "object": {
-          "key": "Street-3840×2160.mp4",
+          "key": "Aerial.mp4",
           "size": 1024,
           "eTag": "0123456789abcdef0123456789abcdef",
           "sequencer": "0A1B2C3D4E5F678901"

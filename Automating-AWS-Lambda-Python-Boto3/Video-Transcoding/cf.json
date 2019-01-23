@@ -7,6 +7,9 @@
         "Transcoded": {
             "Type": "AWS::S3::Bucket"
         },
+        "Thumbnails": {
+            "Type": "AWS::S3::Bucket"
+        },
         "TranscoderTopic": {
             "Type": "AWS::SNS::Topic",
             "Properties": {

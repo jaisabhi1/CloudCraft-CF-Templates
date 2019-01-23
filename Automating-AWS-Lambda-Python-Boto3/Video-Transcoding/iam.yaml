@@ -11,4 +11,5 @@ Statement:
       - logs:*
       - s3:*
       - sns:*
+      - tag:*
     Resource: '*'

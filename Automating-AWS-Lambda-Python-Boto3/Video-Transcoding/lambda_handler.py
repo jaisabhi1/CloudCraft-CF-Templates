@@ -11,7 +11,7 @@ s3 = boto3.resource('s3')
 
 
 def lambda_handler(event, context):
-    print("Received event: " + json.dumps(event, indent=2))
+    print("Received event: " + json.dumps(event))
 
     # Get the object from the event
     key = urllib.parse.unquote_plus(
@@ -23,20 +23,17 @@ def lambda_handler(event, context):
     job = transcoder.create_job(
         PipelineId=PIPELINE_ID,
         Input={
-            'Key': key,
-            'FrameRate': 'auto',
-            'Resolution': 'auto',
-            'AspectRatio': 'auto',
-            'Interlaced': 'auto',
-            'Container': 'auto',
+            'Key': key
         },
         Outputs=[
             {
                 'Key': filename + '-1080p.mp4',
+                'ThumbnailPattern': filename + '-{resolution}-{count}',
                 'PresetId': '1351620000001-000001'  # Generic 1080p
             },
             {
                 'Key': filename + '-720p.mp4',
+                'ThumbnailPattern': filename + '-{resolution}-{count}',
                 'PresetId': '1351620000001-000010'  # Generic 720p
             }
         ]
@@ -46,7 +43,7 @@ def lambda_handler(event, context):
     print("job={}".format(job))
     job_id = job['Job']['Id']
 
-    # Wait the job completed
+    # Wait for the job to complete
     waiter = transcoder.get_waiter('job_complete')
     waiter.wait(Id=job_id)
     end_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]

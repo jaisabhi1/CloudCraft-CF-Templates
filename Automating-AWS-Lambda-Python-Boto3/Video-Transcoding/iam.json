@@ -12,7 +12,8 @@
                 "lambda:*",
                 "logs:*",
                 "s3:*",
-                "sns:*"
+                "sns:*",
+                "tag:*"
             ],
             "Resource": "*"
         }
