@@ -1,0 +1,18 @@
+Version: '2012-10-17'
+Statement:
+  - Sid: LambdaEC2
+    Effect: Allow
+    Action:
+      - application-autoscaling:*
+      - cloudformation:*
+      - cloudwatch:*
+      - dynamodb:*
+      - ec2:*
+      - iam:*
+      - kms:*
+      - lambda:*
+      - logs:*
+      - resource-groups:*
+      - sqs:*
+      - tag:*
+    Resource: '*'
