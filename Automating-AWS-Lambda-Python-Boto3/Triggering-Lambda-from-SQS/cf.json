@@ -381,7 +381,7 @@
                 "ImageId": "%ami-122%",
                 "UserData": {
                     "Fn::Base64": {
-                        "Fn::Sub": "#!/bin/bash\n/bin/echo '%password%' | /bin/passwd cloud_user --stdin\nyum update -y\n"
+                        "Fn::Sub": "#!/bin/bash\n/bin/echo '%password%' | /bin/passwd cloud_user --stdin\nyum update -y\npip3.7 install --upgrade boto3 faker ipython awscli\nmkdir /home/cloud_user/.aws\necho -e '[default]\\nregion = us-east-1' > /home/cloud_user/.aws/config\ncurl --silent \"https://raw.githubusercontent.com/linuxacademy/content-lambda-boto3/master/Triggering-Lambda-from-SQS/send_message.py\" -o /home/cloud_user/send_message.py\nchmod a+x /home/cloud_user/send_message.py\n"
                     }
                 },
                 "NetworkInterfaces": [
@@ -401,6 +401,17 @@
                             "Ref": "PublicSubnetA"
                         }
                     }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "pubIpAddress1": {
+            "Description": "Public IP address EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance",
+                    "PublicIp"
                 ]
             }
         }

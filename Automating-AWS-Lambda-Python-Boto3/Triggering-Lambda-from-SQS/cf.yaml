@@ -216,6 +216,10 @@ Resources:
           /bin/echo '%password%' | /bin/passwd cloud_user --stdin
           yum update -y
           pip3.7 install --upgrade boto3 faker ipython awscli
+          mkdir /home/cloud_user/.aws
+          echo -e '[default]\nregion = us-east-1' > /home/cloud_user/.aws/config
+          curl --silent "https://raw.githubusercontent.com/linuxacademy/content-lambda-boto3/master/Triggering-Lambda-from-SQS/send_message.py" -o /home/cloud_user/send_message.py
+          chmod a+x /home/cloud_user/send_message.py
       NetworkInterfaces:
         - GroupSet:
             - !GetAtt VPC.DefaultSecurityGroup
@@ -223,3 +227,8 @@ Resources:
           DeviceIndex: '0'
           DeleteOnTermination: true
           SubnetId: !Ref PublicSubnetA
+
+Outputs:
+  pubIpAddress1:
+    Description: Public IP address EC2 instance
+    Value: !GetAtt EC2Instance.PublicIp

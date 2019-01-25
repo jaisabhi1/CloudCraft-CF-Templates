@@ -1,6 +1,6 @@
 from datetime import datetime
-import os
 import json
+import os
 import boto3
 
 QUEUE_NAME = os.environ['QUEUE_NAME']
@@ -34,12 +34,8 @@ def lambda_handler(event, context):
                 'Timestamp': datetime.now().isoformat()
             }
         )
-        print("Wrote message to DynamoDB")
+        print("Wrote message to DynamoDB:", json.dumps(response))
 
         # Delete SQS message
         message.delete()
         print("Deleted message:", message.message_id)
-
-
-if __name__ == '__main__':
-    lambda_handler({}, {})

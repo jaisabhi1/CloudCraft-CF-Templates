@@ -1,0 +1,5 @@
+{
+  "QUEUE_NAME": "Messages",
+  "MAX_QUEUE_MESSAGES": "10",
+  "DYNAMODB_TABLE": "Message"
+}
